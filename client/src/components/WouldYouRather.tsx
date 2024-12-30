@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 
+type questionInfo = {
+  question: String,
+  firstOptionCount: Number,
+  secondOptionCount: Number
+}
+
 function WouldYouRather() {
-  const [questions, setQuestions] = useState<any[]>();
+  const [questions, setQuestions] = useState<questionInfo[]>();
+  const [currQ, setCurrQ] = useState<questionInfo>({
+    question: "", 
+    firstOptionCount: 0, 
+    secondOptionCount: 0
+  });
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,6 +44,19 @@ function WouldYouRather() {
   
   */
 
+  const generateNewQuestion = () => {
+    // TODO
+  }
+  const useOldQuestion = () => {
+    if(questions === undefined || questions.length === 0) {
+      generateNewQuestion();
+      return
+    }
+
+    let questionNumber = Math.floor(Math.random() * questions.length)
+    setCurrQ(questions[questionNumber]);
+  }
+
   // Get questions & question count from DB
   useEffect(() => {
     fetch('http://localhost:8080/get-questions')
@@ -43,34 +67,51 @@ function WouldYouRather() {
       return res.json()
     })
     .then((data) => {
-      setQuestions(data.Response.data)
-      setCount(data.Response.count)
+      setQuestions(data.response)
+      setCount(data.count)
     })
     .catch((e) => console.error("Error getting questions:", e))
   });
 
+  let rand = Math.random();
+
   // 70% generate new, 30% use old
   if(count < 10) {
-
+    if(rand <= .7)
+      generateNewQuestion();
+    else
+      useOldQuestion();
   }
   // 50/50
   else if(count < 30) {
-
+    if(rand <= .5)
+      generateNewQuestion();
+    else
+      useOldQuestion();
   }
   // 40/60
   else if(count < 50) {
-
+    if(rand <= .4)
+      generateNewQuestion();
+    else
+      useOldQuestion();
   }
   // 30/70
   else {
-
+    if(rand <= .3)
+      generateNewQuestion();
+    else
+      useOldQuestion();
   }
 
   return (
     <>
-      <p>Count: {count}</p>
-      <button className="game-button">Option 1</button>
-      <button className="game-button">Option 2</button>
+      <h1 className="game-title-text">Would You Rather</h1>
+      <div>
+        <button className="button game-button">{currQ.question}</button>
+        {/* <p>Count: {count}</p> */}
+        <button className="button game-button" style={{marginTop: "40vh"}}>{currQ.question}</button>
+      </div>
     </>
   )
 }

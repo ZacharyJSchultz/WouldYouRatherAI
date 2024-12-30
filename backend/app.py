@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
-import os, sys
+import os, sys, json
 
 
 # TODO: Host on vercel
@@ -27,10 +27,10 @@ def getQuestions():
     try:
         resp = client.table('questions').select('*', count='exact', head=False).execute()
         code = 500 if resp is None else 200
-        return {'Code': code, 'Response': resp}
+        return {'code': code, 'count': resp.count, 'response': resp.data}
     except:
         print("Error returning questions!")
-        return {'Code': 500, 'Response': None}
+        return {'code': 500, 'count': -1, 'response': None}
 
 # Note: This function will also add the new function to the DB, with no responses (necessitating a call to update-question-count after a response)
 @app.route('/generate-new-question', methods=['GET'])
@@ -49,6 +49,7 @@ if(__name__ == '__main__'):
         raise Exception("Error! Failed to connect to database!")
         sys.exit(1)
     
+    print("TESTING")
     app.run(port=8080)
 
 
