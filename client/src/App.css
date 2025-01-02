@@ -25,24 +25,37 @@
 }
 
 .title-text {
-  color: rgb(45, 45, 54);
   font-size: 72px;
-  font-family: 'Montserrat', sans-serif;
+}
+
+.game-text {
+  color: rgb(45, 45, 54);
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  right: 10px;
 }
 
 .game-title-text {
-  color: rgb(45, 45, 54);
   font-size: 24px;
-  font-family: 'Montserrat', sans-serif;
-  position: absolute;
   top: 10px;
-  right: 10px;
-  margin: 0;
-  padding: 0;
   z-index: 1000;
 }
 
-p {
+.game-author-text {
+  font-size: 16px;
+  top: 40px;
+  z-index: 999;
+}
+
+.game-source-text {
+  font-size: 16px;
+  top: 65px;
+  z-index: 998;
+  text-decoration: underline;
+}
+
+p, a, h1 {
   font-family: 'Montserrat', sans-serif;
   color: rgb(45, 45, 54);
 }

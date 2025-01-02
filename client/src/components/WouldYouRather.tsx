@@ -106,7 +106,9 @@ function WouldYouRather() {
 
   return (
     <>
-      <h1 className="game-title-text">Would You Rather</h1>
+      <h1 className="game-text game-title-text">Would You Rather</h1>
+      <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}}>Zach Schultz</a></p>
+      <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text">GitHub</a>
       <div>
         <button className="button game-button">{currQ.question}</button>
         {/* <p>Count: {count}</p> */}
