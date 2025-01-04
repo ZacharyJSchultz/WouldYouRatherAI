@@ -1,20 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 type questionInfo = {
-  question: String,
+  firstOption: String,
+  secondOption: String,
   firstOptionCount: Number,
   secondOptionCount: Number
 }
 
 function WouldYouRather() {
-  const [questions, setQuestions] = useState<questionInfo[]>();
-  const [currQ, setCurrQ] = useState<questionInfo>({
-    question: "", 
+   // Only need re-rendering after loading or error, so useRef used instead
+  const currQ = useRef<questionInfo>({
+    firstOption: "", 
+    secondOption: "",
     firstOptionCount: 0, 
     secondOptionCount: 0
   });
-  const [count, setCount] = useState(0);
+  const questions = useRef<questionInfo[]>([]);
+  const [count, setCount] = useState(-1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(true);
 
   /* 
     Steps:
@@ -45,75 +49,118 @@ function WouldYouRather() {
   */
 
   const generateNewQuestion = () => {
-    // TODO
+    fetch("http://localhost:8080/generate-question")
+    .then((res) => {
+      if(!res.ok)
+        throw new Error("Error: Generate question response not okay");
+
+      return res.json();
+    })
+    .then((data) => {
+      currQ.current = {
+        firstOption: data.firstOption,
+        secondOption: data.secondOption,
+        firstOptionCount: data.firstOptionCount,
+        secondOptionCount: data.secondOptionCount
+      };
+    })
+    .catch((e) => console.error("Error generating new question:", e))
+    .finally(() => setIsGenerating(false));
   }
   const useOldQuestion = () => {
-    if(questions === undefined || questions.length === 0) {
+    if(questions === undefined || questions.current.length === 0) {
       generateNewQuestion();
       return
     }
 
-    let questionNumber = Math.floor(Math.random() * questions.length)
-    setCurrQ(questions[questionNumber]);
+    let questionNumber = Math.floor(Math.random() * questions.current.length)
+    console.log(questions.current[questionNumber]);
+    currQ.current = questions.current[questionNumber];
+
+    setIsGenerating(false);
   }
+
+  // Used to handle loading. So no unstyled content flashes on the screen, loading isn't set to true until the page is fully loaded
+  useEffect(() => {
+    const handleLoad = () => {
+      setIsLoading(false);    // Unhide content after loading
+    };
+
+    window.addEventListener('load', handleLoad);
+
+    // Clean up listener after loading
+    return () => window.removeEventListener('load', handleLoad);
+  }, []);  
 
   // Get questions & question count from DB
   useEffect(() => {
+    setIsGenerating(true);
     fetch('http://localhost:8080/get-questions')
     .then((res) => {
       if(!res.ok)
-        throw new Error("Error: Response not ok");
+        throw new Error("Error: Get questions response not ok");
 
       return res.json()
     })
     .then((data) => {
-      setQuestions(data.response)
-      setCount(data.count)
+      questions.current = data.response;
+      setCount(data.count);
     })
-    .catch((e) => console.error("Error getting questions:", e))
-  });
+    .catch((e) => console.error("Error getting questions:", e));
+  }, []);
 
-  let rand = Math.random();
+  /* Random / Question selection logic. Ratios for generating new vs using old should look something like this:
+   *    If count < 10, 70/30 generate new to use old
+   *    If count >= 10, 50/50
+   *    If count >= 30, 40/60
+   *    If count >= 50, 30/70
+   * Basically, as the count increases, the chance a new question is generated should drastically decrease
+   */
+  useEffect(() => {
+    /* Could have done this with a bunch of nested if/else statements, but instead I use a really cool 
+     * piecewise function to accomplish the same thing but cleaner and faster. The function is as follows:
+     *    0 <= count < 10:    => 1 - 0.03 * count
+     *    10 <= count < 50    => .8 - 0.01 * count
+     *    count >= 50:        => 0.3
+     * As examples:
+     *    If count = 0, rand = 1
+     *    If count = 5, rand = .85
+     *    If count = 10, rand = .7
+     *    If count = 30, rand = .5
+     *    If count = 40, rand = .4
+     * 
+     * This is close enough to the above (which was decided pretty arbitrarily anyways) that I rolled with it.
+     */
 
-  // 70% generate new, 30% use old
-  if(count < 10) {
-    if(rand <= .7)
+    let b = count < 10 ? 1 : .8;
+    let m = count < 10 ? 0.03 : 0.01
+
+    let threshold = Math.max(0.3, b - m * count);
+    let rand = Math.random();
+
+    if(rand <= threshold)
       generateNewQuestion();
     else
       useOldQuestion();
-  }
-  // 50/50
-  else if(count < 30) {
-    if(rand <= .5)
-      generateNewQuestion();
-    else
-      useOldQuestion();
-  }
-  // 40/60
-  else if(count < 50) {
-    if(rand <= .4)
-      generateNewQuestion();
-    else
-      useOldQuestion();
-  }
-  // 30/70
-  else {
-    if(rand <= .3)
-      generateNewQuestion();
-    else
-      useOldQuestion();
-  }
+  }, [count]);
 
   return (
     <>
-      <h1 className="game-text game-title-text">Would You Rather</h1>
-      <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}}>Zach Schultz</a></p>
-      <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text">GitHub</a>
-      <div>
-        <button className="button game-button">{currQ.question}</button>
-        {/* <p>Count: {count}</p> */}
-        <button className="button game-button" style={{marginTop: "40vh"}}>{currQ.question}</button>
-      </div>
+      {
+        !isLoading && 
+        <>
+          <h1 className="game-text game-title-text">Would You Rather</h1>
+          <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}}>Zach Schultz</a></p>
+          <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text">GitHub</a>
+        </>
+      }
+      {
+        count === -1 ? <p>Error!</p> : !isGenerating &&
+        <div>
+          <button className="button game-button">{currQ.current.firstOption}</button>
+          <button className="button game-button" style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
+        </div>
+      }
     </>
   )
 }
