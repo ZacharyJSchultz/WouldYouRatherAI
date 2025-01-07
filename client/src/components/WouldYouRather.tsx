@@ -19,6 +19,7 @@ function WouldYouRather() {
   const [count, setCount] = useState(-1);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   /* 
     Steps:
@@ -49,6 +50,7 @@ function WouldYouRather() {
   */
 
   const generateNewQuestion = () => {
+    console.log("GENERATE NEW");
     fetch("http://localhost:8080/generate-question")
     .then((res) => {
       if(!res.ok)
@@ -64,10 +66,14 @@ function WouldYouRather() {
         secondOptionCount: data.secondOptionCount
       };
     })
-    .catch((e) => console.error("Error generating new question:", e))
-    .finally(() => setIsGenerating(false));
+    .catch((e) => {
+      console.error("Error generating new question:", e);
+      setIsError(true);
+    })
+    .finally(() => setIsGenerating(count === -1));  // If count is -1, then isGenerating should remain true, because there's an error somewhere
   }
   const useOldQuestion = () => {
+    console.log("USE OLD");
     if(questions === undefined || questions.current.length === 0) {
       generateNewQuestion();
       return
@@ -77,20 +83,13 @@ function WouldYouRather() {
     console.log(questions.current[questionNumber]);
     currQ.current = questions.current[questionNumber];
 
-    setIsGenerating(false);
+    setIsGenerating(count === -1);
   }
 
   // Used to handle loading. So no unstyled content flashes on the screen, loading isn't set to true until the page is fully loaded
   useEffect(() => {
-    const handleLoad = () => {
-      setIsLoading(false);    // Unhide content after loading
-    };
-
-    window.addEventListener('load', handleLoad);
-
-    // Clean up listener after loading
-    return () => window.removeEventListener('load', handleLoad);
-  }, []);  
+    setTimeout(() => setIsLoading(false), 200);   // See HomeScreen.tsx for more detailed explanation on why timeout is used -- it just works best
+  });
 
   // Get questions & question count from DB
   useEffect(() => {
@@ -106,7 +105,10 @@ function WouldYouRather() {
       questions.current = data.response;
       setCount(data.count);
     })
-    .catch((e) => console.error("Error getting questions:", e));
+    .catch((e) => {
+      console.error("Error getting questions:", e);
+      setIsError(true);
+    })
   }, []);
 
   /* Random / Question selection logic. Ratios for generating new vs using old should look something like this:
@@ -150,15 +152,15 @@ function WouldYouRather() {
         !isLoading && 
         <>
           <h1 className="game-text game-title-text">Would You Rather</h1>
-          <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}}>Zach Schultz</a></p>
-          <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text">GitHub</a>
+          <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}} target="_blank">Zach Schultz</a></p>
+          <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text" target="_blank">GitHub</a>
         </>
       }
       {
-        count === -1 ? <p>Error!</p> : !isGenerating &&
-        <div>
-          <button className="button game-button">{currQ.current.firstOption}</button>
-          <button className="button game-button" style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
+        isError ? <p className="container">Error!</p> : !isGenerating &&
+        <div className="container">
+          <button className="button game-button row">{currQ.current.firstOption}</button>
+          <button className="button game-button row" style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
         </div>
       }
     </>

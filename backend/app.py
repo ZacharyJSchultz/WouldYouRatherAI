@@ -8,6 +8,7 @@ import os, sys, json
 
 # TODO: Host on vercel
 
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -34,8 +35,8 @@ def getQuestions():
         questions = resp.data
 
         return {'code': code, 'count': resp.count, 'response': resp.data}
-    except:
-        print("Error returning questions!")
+    except Exception as e:
+        print("Error returning questions: ", e)
         return {'code': 500, 'count': -1, 'response': None}
     
 # This function will use OpenAI's API to generate a new question, returning the question and updating the DB
@@ -44,14 +45,23 @@ def generateQuestion():
     try:
         genString = ""
         if(len(questions) != 0):
-            questionsStr = map(lambda q: "Would you rather " + q.firstOption + " or " + q.secondOption, questions)
-            genString = " The question must be different from these previous questions: " + questionsStr
+            genString = " The question must be different from these previous questions: ".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
 
-        resp = model.generate_content("Please generate a Would You Rather question in the following format: ___ or ___." + genString)
+        resp = model.generate_content("Please generate a Would You Rather question in the following format: ___ or ___?" + genString)
 
+        # Send back 500 if server error, else 200 for success
         code = 500 if (resp is None or resp.candidates is None or len(resp.candidates) == 0) else 200
-        return {'code': code, 'response': resp.candidates[0].content}
-    except:
+
+        # Generate response as substring of generated text (from after the word 'rather' to the end of the text at \n)
+        respToSend = None
+        if resp is not None:
+            text = resp.candidates[0].content.parts[0].text
+            print(text)
+            respToSend = text[24: text.rindex('?')]     # TODO: Turn into dictionary with firstOption and secondOption, then add to supabase
+
+        return {'code': code, 'response': respToSend}
+    except Exception as e:
+        print("Error generating question: ", e)
         return {'code': 500, 'response': None}
 
 # This function is for updating the responses to the questions, depending on what the user selects
@@ -63,7 +73,7 @@ if(__name__ == '__main__'):
     client: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_API_KEY"))
 
     # Set up gemini
-    genai.configure(api_key=os.getenv["GEMINI_API_KEY"])
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     model = genai.GenerativeModel('gemini-1.5-flash')
 
     # If client connection fails, throw error and exit
