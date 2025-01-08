@@ -45,9 +45,9 @@ def generateQuestion():
     try:
         genString = ""
         if(len(questions) != 0):
-            genString = " The question must be different from these previous questions: ".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
+            genString = " The choices must be different from the choices in these previous questions: ".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
 
-        resp = model.generate_content("Please generate a Would You Rather question in the following format: ___ or ___?" + genString)
+        resp = model.generate_content("Please generate a Would You Rather question in this exact format: '~[choice1], ~[choice2]' Only use two tildas, one before the first choice and one before the second!" + genString)
 
         # Send back 500 if server error, else 200 for success
         code = 500 if (resp is None or resp.candidates is None or len(resp.candidates) == 0) else 200
@@ -57,7 +57,14 @@ def generateQuestion():
         if resp is not None:
             text = resp.candidates[0].content.parts[0].text
             print(text)
-            respToSend = text[24: text.rindex('?')]     # TODO: Turn into dictionary with firstOption and secondOption, then add to supabase
+            tildaIndex = text.rindex('~')
+            respToSend = {
+                'firstOption': text[1: tildaIndex-2],           # First option bounds
+                'secondOption': text[tildaIndex+1:len(text)-1].rstrip(),   # Second option bounds (removing period and newline at end of generation)
+                'firstOptionCount': 0,
+                'secondOptionCount': 0
+            }
+            # TODO: Add to supabase
 
         return {'code': code, 'response': respToSend}
     except Exception as e:
@@ -67,7 +74,7 @@ def generateQuestion():
 # This function is for updating the responses to the questions, depending on what the user selects
 @app.route('/update-question-count', methods=['GET'])
 def updateQuestionCount():
-    pass
+    pass    # TODO
 
 if(__name__ == '__main__'):
     client: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_API_KEY"))

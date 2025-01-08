@@ -20,6 +20,7 @@ function WouldYouRather() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [displayResults, setDisplayResults] = useState(false);
 
   /* 
     Steps:
@@ -49,6 +50,24 @@ function WouldYouRather() {
   
   */
 
+  const handleClick = (buttonNum: Number) => {
+    console.log("UPDATE COUNT");
+    fetch("http://localhost:8080/update-question-count", {
+      method: "PATCH",
+      body: JSON.stringify(buttonNum === 0 ? "firstoptioncount" : "secondoptioncount")
+    })
+    .then((res) => {
+      if(!res.ok)
+        throw new Error("Error: Update count response not okay");
+      else
+        console.log("Count successfully updated!");
+    });
+
+    setDisplayResults(true);
+
+    // TODO: Actually display results (adding 1 to whatever selection user chooses on client side), then generate new question
+  }
+
   const generateNewQuestion = () => {
     console.log("GENERATE NEW");
     fetch("http://localhost:8080/generate-question")
@@ -59,19 +78,21 @@ function WouldYouRather() {
       return res.json();
     })
     .then((data) => {
+      console.log(data)
       currQ.current = {
-        firstOption: data.firstOption,
-        secondOption: data.secondOption,
-        firstOptionCount: data.firstOptionCount,
-        secondOptionCount: data.secondOptionCount
+        firstOption: data.response.firstOption,
+        secondOption: data.response.secondOption,
+        firstOptionCount: data.response.firstOptionCount,
+        secondOptionCount: data.response.secondOptionCount
       };
     })
     .catch((e) => {
       console.error("Error generating new question:", e);
       setIsError(true);
     })
-    .finally(() => setIsGenerating(count === -1));  // If count is -1, then isGenerating should remain true, because there's an error somewhere
+    .finally(() => {console.log(count); setIsGenerating(count === -1)});  // If count is -1, then isGenerating should remain true, because there's an error somewhere
   }
+
   const useOldQuestion = () => {
     console.log("USE OLD");
     if(questions === undefined || questions.current.length === 0) {
@@ -93,7 +114,12 @@ function WouldYouRather() {
 
   // Get questions & question count from DB
   useEffect(() => {
+    if(displayResults)    // If displayResults is true, that means we are coming from a previous run. So we should wait to give time for players to view results
+      async () => await new Promise(r => setTimeout(r, 3000));
+    
     setIsGenerating(true);
+    setIsError(false);
+    setDisplayResults(false);
     fetch('http://localhost:8080/get-questions')
     .then((res) => {
       if(!res.ok)
@@ -109,7 +135,7 @@ function WouldYouRather() {
       console.error("Error getting questions:", e);
       setIsError(true);
     })
-  }, []);
+  }, [displayResults]);
 
   /* Random / Question selection logic. Ratios for generating new vs using old should look something like this:
    *    If count < 10, 70/30 generate new to use old
@@ -159,8 +185,8 @@ function WouldYouRather() {
       {
         isError ? <p className="container">Error!</p> : !isGenerating &&
         <div className="container">
-          <button className="button game-button row">{currQ.current.firstOption}</button>
-          <button className="button game-button row" style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
+          <button className="button game-button row" onClick={() => handleClick(0)}>{currQ.current.firstOption}</button>
+          <button className="button game-button row" onClick={() => handleClick(1)} style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
         </div>
       }
     </>
