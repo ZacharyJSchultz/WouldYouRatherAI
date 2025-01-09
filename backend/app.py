@@ -49,9 +49,8 @@ def generateQuestion():
             if(len(questions) != 0):
                 prevStrs = " The choices must be different from the choices in these previous questions: " + "".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
 
-            temp = "Please generate a Would You Rather question in this exact format: '~[choice1], ~[choice2]' Only use two tildas, one before the first choice and one before the second!" + prevStrs
-            print(temp)
-            resp = model.generate_content(temp)
+            resp = model.generate_content("Please generate a Would You Rather question in this exact format: '~[choice1], ~[choice2]' Only use two tildas, one before the first choice and one before the second!" + prevStrs)
+            
             # Send back 500 if server error, else 200 for success
             code = 500 if (resp is None or resp.candidates is None or len(resp.candidates) == 0) else 200
 

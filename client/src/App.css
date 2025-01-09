@@ -40,22 +40,33 @@ h1 {
   line-height: 1.1;
 }
 
-p, a, h1 {
+p, a, h1, h2 {
   font-family: 'Montserrat', sans-serif;
   color: rgb(45, 45, 54);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  a:hover {
-    color: #747bff;
+  10% {
+    opacity: 1;
+    transform: translateY(0);
   }
-  button {
-    background-color: #f9f9f9;
+  90% {
+    opacity: 1;
+    transform: translateY(0);
   }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.results {
+  opacity: 0;
+  animation: fadeInOut 2.5s ease-in-out forwards;
 }
 
 .logo {
@@ -90,20 +101,30 @@ p, a, h1 {
 .game-title-text {
   font-size: 3.2vmin;
   top: 0.8vmin;
-  z-index: 1000;
 }
 
 .game-author-text {
   font-size: 2.1vmin;
   top: 4.5vmin;
-  z-index: 999;
 }
 
 .game-source-text {
   font-size: 2.1vmin;
   top: 7.6vmin;
-  z-index: 998;
   text-decoration: underline;
+}
+
+.score-text {
+  color: rgb(45, 45, 54);
+  position: absolute;
+  font-size: 2.1vmin;
+  margin: 0;
+  padding: 0;
+  left: 0.8vw;
+}
+
+.score-disclaimer {
+  top: 7vmin;
 }
 
 .container {
