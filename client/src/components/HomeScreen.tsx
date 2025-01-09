@@ -27,13 +27,14 @@ function HomeScreen() {
 
   return (
     <>
-      {!isLoading && 
-      <div className="container">
-        <h1 className="title-text row">Would You Rather</h1>
-        <Link className="row" to="/would-you-rather">     {/* Could also use useNavigate() instead, but Link works just as well */}
-          <button className="button play-button">Play!</button>
-        </Link>
-      </div>
+      {
+        !isLoading && 
+        <div className="container">
+          <h1 className="title-text row">Would You Rather</h1>
+          <Link className="row" to="/would-you-rather">     {/* Could also use useNavigate() instead, but Link works just as well */}
+            <button className="button play-button">Play!</button>
+          </Link>
+        </div>
       }
     </>
   )

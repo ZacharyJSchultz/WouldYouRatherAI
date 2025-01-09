@@ -1,19 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 
 type questionInfo = {
-  firstOption: String,
-  secondOption: String,
-  firstOptionCount: Number,
-  secondOptionCount: Number
+  firstoption: string,
+  secondoption: string,
+  firstoptioncount: number,
+  secondoptioncount: number
 }
 
 function WouldYouRather() {
    // Only need re-rendering after loading or error, so useRef used instead
   const currQ = useRef<questionInfo>({
-    firstOption: "", 
-    secondOption: "",
-    firstOptionCount: 0, 
-    secondOptionCount: 0
+    firstoption: "", 
+    secondoption: "",
+    firstoptioncount: 0, 
+    secondoptioncount: 0
   });
   const questions = useRef<questionInfo[]>([]);
   const [count, setCount] = useState(-1);
@@ -50,11 +50,18 @@ function WouldYouRather() {
   
   */
 
-  const handleClick = (buttonNum: Number) => {
-    console.log("UPDATE COUNT");
-    fetch("http://localhost:8080/update-question-count", {
+  const handleClick = async (buttonNum: Number) => {
+    if(buttonNum === 0)
+      currQ.current.firstoptioncount += 1;
+    else
+      currQ.current.secondoptioncount += 1;
+
+    await fetch("http://localhost:8080/update-question-count", {
       method: "PATCH",
-      body: JSON.stringify(buttonNum === 0 ? "firstoptioncount" : "secondoptioncount")
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(currQ.current),
     })
     .then((res) => {
       if(!res.ok)
@@ -64,8 +71,6 @@ function WouldYouRather() {
     });
 
     setDisplayResults(true);
-
-    // TODO: Actually display results (adding 1 to whatever selection user chooses on client side), then generate new question
   }
 
   const generateNewQuestion = () => {
@@ -78,19 +83,18 @@ function WouldYouRather() {
       return res.json();
     })
     .then((data) => {
-      console.log(data)
       currQ.current = {
-        firstOption: data.response.firstOption,
-        secondOption: data.response.secondOption,
-        firstOptionCount: data.response.firstOptionCount,
-        secondOptionCount: data.response.secondOptionCount
+        firstoption: data.response.firstoption,
+        secondoption: data.response.secondoption,
+        firstoptioncount: data.response.firstoptioncount,
+        secondoptioncount: data.response.secondoptioncount
       };
     })
     .catch((e) => {
       console.error("Error generating new question:", e);
       setIsError(true);
     })
-    .finally(() => {console.log(count); setIsGenerating(count === -1)});  // If count is -1, then isGenerating should remain true, because there's an error somewhere
+    .finally(() => {setIsGenerating(count === -1)});  // If count is -1, then isGenerating should remain true, because there's an error somewhere
   }
 
   const useOldQuestion = () => {
@@ -104,22 +108,21 @@ function WouldYouRather() {
     console.log(questions.current[questionNumber]);
     currQ.current = questions.current[questionNumber];
 
+    // Remove question from array (because we're using it, and don't want to repeat it anytime soon)
+    questions.current.splice(questionNumber, 1)
+
     setIsGenerating(count === -1);
   }
 
   // Used to handle loading. So no unstyled content flashes on the screen, loading isn't set to true until the page is fully loaded
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 200);   // See HomeScreen.tsx for more detailed explanation on why timeout is used -- it just works best
-  });
+  }, []);
 
-  // Get questions & question count from DB
+  // Get questions & question count from DB. Runs once at page load
   useEffect(() => {
-    if(displayResults)    // If displayResults is true, that means we are coming from a previous run. So we should wait to give time for players to view results
-      async () => await new Promise(r => setTimeout(r, 3000));
-    
-    setIsGenerating(true);
-    setIsError(false);
-    setDisplayResults(false);
+    console.log("Fetching questions & question count...")
+
     fetch('http://localhost:8080/get-questions')
     .then((res) => {
       if(!res.ok)
@@ -135,7 +138,7 @@ function WouldYouRather() {
       console.error("Error getting questions:", e);
       setIsError(true);
     })
-  }, [displayResults]);
+  }, []);
 
   /* Random / Question selection logic. Ratios for generating new vs using old should look something like this:
    *    If count < 10, 70/30 generate new to use old
@@ -159,6 +162,17 @@ function WouldYouRather() {
      * 
      * This is close enough to the above (which was decided pretty arbitrarily anyways) that I rolled with it.
      */
+    console.log("Choosing / generating question to display...")
+
+    if(displayResults) {    // If displayResults is true, that means we are coming from a previous run. So we should wait to give time for players to view results
+      async () => await new Promise(r => setTimeout(r, 3000));
+      setIsGenerating(true);
+    }
+
+    if(count === -1) {
+      console.log("Count =/= -1, returning...")
+      return;
+    }
 
     let b = count < 10 ? 1 : .8;
     let m = count < 10 ? 0.03 : 0.01
@@ -170,7 +184,7 @@ function WouldYouRather() {
       generateNewQuestion();
     else
       useOldQuestion();
-  }, [count]);
+  }, [count, displayResults]);
 
   return (
     <>
@@ -183,10 +197,19 @@ function WouldYouRather() {
         </>
       }
       {
-        isError ? <p className="container">Error!</p> : !isGenerating &&
+        displayResults && 
+        <>
+          <div className="container">
+            <h1 className="row">{(currQ.current.firstoptioncount * 100.0) /(currQ.current.firstoptioncount + currQ.current.secondoptioncount)}% | {currQ.current.firstoptioncount} responses!</h1>
+            <h1 className="row" style={{marginTop: "40vh"}}>{currQ.current.secondoptioncount/(currQ.current.firstoptioncount + currQ.current.secondoptioncount)}% | {currQ.current.secondoptioncount} responses!</h1>
+          </div>
+        </>
+      }
+      {
+        isError ? <h1 className="container game-title-text">Error! Please refresh to try again!</h1> : (!isGenerating && !displayResults) &&
         <div className="container">
-          <button className="button game-button row" onClick={() => handleClick(0)}>{currQ.current.firstOption}</button>
-          <button className="button game-button row" onClick={() => handleClick(1)} style={{marginTop: "40vh"}}>{currQ.current.secondOption}</button>
+          <button className="button game-button row" onClick={() => handleClick(0)}>{currQ.current.firstoption}</button>
+          <button className="button game-button row" onClick={() => handleClick(1)} style={{marginTop: "40vh"}}>{currQ.current.secondoption}</button>
         </div>
       }
     </>

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -42,39 +42,56 @@ def getQuestions():
 # This function will use OpenAI's API to generate a new question, returning the question and updating the DB
 @app.route('/generate-question', methods=['GET'])
 def generateQuestion():
-    try:
-        genString = ""
-        if(len(questions) != 0):
-            genString = " The choices must be different from the choices in these previous questions: ".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
+    count = 0
+    while count <= 2:
+        try:
+            prevStrs = ""
+            if(len(questions) != 0):
+                prevStrs = " The choices must be different from the choices in these previous questions: " + "".join(map(lambda q: "\nWould you rather " + q['firstoption'] + " or " + q['secondoption'], questions))
 
-        resp = model.generate_content("Please generate a Would You Rather question in this exact format: '~[choice1], ~[choice2]' Only use two tildas, one before the first choice and one before the second!" + genString)
+            temp = "Please generate a Would You Rather question in this exact format: '~[choice1], ~[choice2]' Only use two tildas, one before the first choice and one before the second!" + prevStrs
+            print(temp)
+            resp = model.generate_content(temp)
+            # Send back 500 if server error, else 200 for success
+            code = 500 if (resp is None or resp.candidates is None or len(resp.candidates) == 0) else 200
 
-        # Send back 500 if server error, else 200 for success
-        code = 500 if (resp is None or resp.candidates is None or len(resp.candidates) == 0) else 200
+            # Generate response as substring of generated text (from after the word 'rather' to the end of the text at \n)
+            respToSend = None
+            if resp is not None:
+                text = resp.candidates[0].content.parts[0].text
+                print(text)
+                tildaIndex = text.rindex('~')
+                respToSend = {
+                    'firstoption': text[1: tildaIndex-2],                       # First option bounds
+                    'secondoption': text[tildaIndex+1:len(text)-1].rstrip(),    # Second option bounds (removing period and newline at end of generation)
+                    'firstoptioncount': 0,
+                    'secondoptioncount': 0
+                }
+                # Add new Q to Supabase
+                client.table('questions').insert(respToSend).execute()
 
-        # Generate response as substring of generated text (from after the word 'rather' to the end of the text at \n)
-        respToSend = None
-        if resp is not None:
-            text = resp.candidates[0].content.parts[0].text
-            print(text)
-            tildaIndex = text.rindex('~')
-            respToSend = {
-                'firstOption': text[1: tildaIndex-2],           # First option bounds
-                'secondOption': text[tildaIndex+1:len(text)-1].rstrip(),   # Second option bounds (removing period and newline at end of generation)
-                'firstOptionCount': 0,
-                'secondOptionCount': 0
-            }
-            # TODO: Add to supabase
+            return {'code': code, 'response': respToSend}
+        except Exception as e:
+            print("Error generating question: ", e)
 
-        return {'code': code, 'response': respToSend}
-    except Exception as e:
-        print("Error generating question: ", e)
-        return {'code': 500, 'response': None}
+            # If 3 generation attempts have happened and all failed, return None. Else, try again
+            if count >= 2:
+                return {'code': 500, 'response': None}
+            else:
+                count += 1
 
 # This function is for updating the responses to the questions, depending on what the user selects
-@app.route('/update-question-count', methods=['GET'])
+@app.route('/update-question-count', methods=['PATCH'])
 def updateQuestionCount():
-    pass    # TODO
+    try:
+        data = request.json
+        client.table('questions').update({'firstoptioncount': data['firstoptioncount'], 'secondoptioncount': data['secondoptioncount']}).eq('firstoption', data['firstoption']).eq('secondoption', data['secondoption']).execute()
+        return {'code': 200}
+    except Exception as e:
+        print("Error updating question count: ", e)
+        return {'code': 500}
+
+
 
 if(__name__ == '__main__'):
     client: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_API_KEY"))
