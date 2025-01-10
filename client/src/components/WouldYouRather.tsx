@@ -27,10 +27,7 @@ function WouldYouRather() {
   /* 
     Steps:
       1. Get count of entries in DB.
-      2. If count < 10, 70/30 generate new to use old
-         If count >= 10, 50/50
-         If count >= 30, 40/60
-         If count >= 50, 30/70
+      2. Choose whether to generate new or use old question (favor generation if low question number, favor re-use if high question number)
     If generating new message:
       3. Connect to Gemini to generate message (using google gemini npm api)
         Prompt (not exact): Generate a would you rather question with two different options, in the format: 'Would you rather ___, or ____'' 
@@ -55,7 +52,7 @@ function WouldYouRather() {
   // ButtonNum represents what button user clicked. 0 = first option, 1 = second option
   const handleClick = async (buttonNum: Number) => {
     // If the question has no previous answers, skip incrementing score & question count
-    if(currQ.current.firstoptioncount !== 0 && currQ.current.secondoptioncount !== 0) {
+    if(currQ.current.firstoptioncount !== 0 || currQ.current.secondoptioncount !== 0) {
       // If user selected more popular option, increment score
       if((currQ.current.firstoptioncount >= currQ.current.secondoptioncount && buttonNum === 0) || 
         (currQ.current.secondoptioncount >= currQ.current.firstoptioncount && buttonNum === 1))
@@ -164,9 +161,11 @@ function WouldYouRather() {
   useEffect(() => {
     /* Could have done this with a bunch of nested if/else statements, but instead I use a really cool 
      * piecewise function to accomplish the same thing but cleaner and faster. The function is as follows:
-     *    0 <= count < 10:    => 1 - 0.03 * count
-     *    10 <= count < 50    => .8 - 0.01 * count
-     *    count >= 50:        => 0.3
+     *    0 <= count < 10    => 1 - 0.03 * count
+     *    10 <= count < 50   => .8 - 0.01 * count
+     *    50 <= count < 200  => 0.3
+     *    count >= 400:      => 0 (always use old question, to prevent DB overflow)
+     *    
      * As examples:
      *    If count = 0, rand = 1
      *    If count = 5, rand = .85
@@ -190,17 +189,21 @@ function WouldYouRather() {
         console.log("Count =/= -1, returning...")
         return;
       }
-
-      let b = count < 10 ? 1 : .8;
-      let m = count < 10 ? 0.03 : 0.01
-
-      let threshold = Math.max(0.3, b - m * count);
-      let rand = Math.random();
-
-      if(rand <= threshold)
-        generateNewQuestion();
-      else
+      else if(count >= 400) {
         useOldQuestion();
+      }
+      else {
+        let b = count < 10 ? 1 : .8;
+        let m = count < 10 ? 0.03 : 0.01
+
+        let threshold = Math.max(0.3, b - m * count);
+        let rand = Math.random();
+
+        if(rand <= threshold)
+          generateNewQuestion();
+        else
+          useOldQuestion();
+      }
     }
 
     getNewQuestion();
@@ -212,8 +215,8 @@ function WouldYouRather() {
         !isLoading && 
         <>
           <p className="score-text">
-            <a style={{fontSize:"5vmin"}}>{score.current}/{numQs.current}</a>
-            <a style={{top:"10vmin"}}> agreed with majority!</a>  {/* TODO: CAN I ALIGN MIDDLE WITH BIG SCORE???*/}
+            <span style={{fontSize:"5vmin"}}>{score.current}/{numQs.current}</span>
+            <span> agreed with majority!</span>
           </p>
           <p className="score-text score-disclaimer">(not counting newly generated questions)</p>
           <h1 className="game-text game-title-text">Would You Rather</h1>

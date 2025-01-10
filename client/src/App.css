@@ -20,7 +20,6 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
   text-decoration: inherit;
 }
 a:hover {
@@ -40,7 +39,7 @@ h1 {
   line-height: 1.1;
 }
 
-p, a, h1, h2 {
+p, a, h1, h2, span {
   font-family: 'Montserrat', sans-serif;
   color: rgb(45, 45, 54);
 }
@@ -120,11 +119,13 @@ p, a, h1, h2 {
   font-size: 2.1vmin;
   margin: 0;
   padding: 0;
+  top: 0vw;
   left: 0.8vw;
 }
 
 .score-disclaimer {
   top: 7vmin;
+  font-size: 1.5vmin;
 }
 
 .container {
