@@ -4,13 +4,13 @@
 
 A would-you-rather game that uses Generative AI to generate questions, and stores responses in a PostgreSQL database.
 
-Link to Website:  ___
+Link to Website: https://zacharyjschultz.github.io/WouldYouRatherAI/
 
 Author: [Zachary Schultz](https://www.linkedin.com/in/~zachary/) | zjs32@pitt.edu
 
 ## Description
 
-This application uses Google's Gemini to generate questions, ___ to host the backend server, and Supabase to host the PostgreSQL database used to store previously used questions and responses.
+This application uses Google's Gemini to generate questions, Vercel to host the backend server, GitHub Pages to host the frontend website, and Supabase to host the PostgreSQL database used to store previously used questions and responses.
 
 The application switches between generating new questions and re-using old questions, depending on how many questions are currently stored in the database: if there are no questions, the application will always generate a new question. If there are few questions to choose from, then it's more likely to generate a new question. Likewise, to prevent the (free-hosted) database from overflowing with too many responses, as the number of responses increases, the chance of a new question being generated decreases. Once there are > 400 questions in the DB, it will cease to generate new questions (to avoid going over the free storage limit).
 
