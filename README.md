@@ -8,6 +8,10 @@ Link to Website: https://zacharyjschultz.github.io/WouldYouRatherAI/
 
 Author: [Zachary Schultz](https://www.linkedin.com/in/~zachary/) | zjs32@pitt.edu
 
+## Credits
+
+Favicon provided by Flaticon - https://www.flaticon.com/free-icons/letter-w
+
 ## Description
 
 This application uses Google's Gemini to generate questions, Vercel to host the backend server, GitHub Pages to host the frontend website, and Supabase to host the PostgreSQL database used to store previously used questions and responses.
