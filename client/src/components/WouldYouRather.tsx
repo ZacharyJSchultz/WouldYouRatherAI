@@ -67,7 +67,7 @@ function WouldYouRather() {
     else
       currQ.current.secondoptioncount += 1;
 
-    await fetch("http://localhost:8080/update-question-count", {
+    await fetch("http://ec2-54-91-16-150.compute-1.amazonaws.com/update-question-count", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json"
@@ -86,7 +86,7 @@ function WouldYouRather() {
 
   const generateNewQuestion = () => {
     console.log("GENERATE NEW");
-    fetch("http://localhost:8080/generate-question")
+    fetch("http://ec2-54-91-16-150.compute-1.amazonaws.com/generate-question")
     .then((res) => {
       if(!res.ok)
         throw new Error("Error: Generate question response not okay");
@@ -134,7 +134,7 @@ function WouldYouRather() {
   useEffect(() => {
     console.log("Fetching questions & question count...")
 
-    fetch('http://localhost:8080/get-questions')
+    fetch('http://ec2-54-91-16-150.compute-1.amazonaws.com/get-questions')
     .then((res) => {
       if(!res.ok)
         throw new Error("Error: Get questions response not ok");

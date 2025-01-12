@@ -18,6 +18,19 @@ cors = CORS(app)                                # Allow all CORS requests (any r
 # i.e., if you wanted to only allow requests starting with /api from localhost at ports 3000 & 5173:
 # cors = CORS(app, resources={r"/api": {"origins": ["http://localhost:3000", "http://localhost:5173"]}}
 
+client: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_API_KEY"))
+
+# Set up gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# If client connection fails, throw error and exit
+if client is None:
+    raise Exception("Error! Failed to connect to database!")
+    sys.exit(1)
+
+print("Flask is up and running!")
+
 
 
 # Specifies that any connection with route /get-count will cause this function to run (only allowing GET requests)
@@ -93,18 +106,7 @@ def updateQuestionCount():
 
 
 
-if(__name__ == '__main__'):
-    client: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_API_KEY"))
-
-    # Set up gemini
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    model = genai.GenerativeModel('gemini-1.5-flash')
-
-    # If client connection fails, throw error and exit
-    if client is None:
-        raise Exception("Error! Failed to connect to database!")
-        sys.exit(1)
-    
+if(__name__ == '__main__'):    
     print("Running on port 8080...")
     app.run(port=8080)
 
