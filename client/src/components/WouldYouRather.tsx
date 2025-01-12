@@ -23,6 +23,7 @@ function WouldYouRather() {
   const [isGenerating, setIsGenerating] = useState(true);
   const [isError, setIsError] = useState(false);
   const [displayResults, setDisplayResults] = useState(false);
+  const [genNewQ, setGenNewQ] = useState(0);    // This variable's sole purpose is to get the useEffect to run again after clicking a button (more explained in handleclick)
 
   /* 
     Steps:
@@ -82,6 +83,11 @@ function WouldYouRather() {
     });
 
     setDisplayResults(true);
+
+    // Originally, had the useEffect that chooses/generates a new question synced up with the displayResults boolean. But that 
+    // boolean is set to false in the very same useEffect, which causes it to run twice (and generate 2 questions!) This is not 
+    // only efficient, but can also throw currQ out of wack. So I created this variable instead (which also serves as a total q count)
+    setGenNewQ(genNewQ+1);
   }
 
   const generateNewQuestion = () => {
@@ -207,7 +213,7 @@ function WouldYouRather() {
     }
 
     getNewQuestion();
-  }, [count, displayResults]);
+  }, [count, genNewQ]);
 
   return (
     <>
