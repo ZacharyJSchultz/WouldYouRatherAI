@@ -6,5 +6,6 @@ export default defineConfig({
   server: {
     open: true
   },
+  base: "/WouldYouRatherAI",
   plugins: [react()],
 })
