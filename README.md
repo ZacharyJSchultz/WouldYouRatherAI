@@ -22,9 +22,11 @@ The website keeps track of a player's score, which represents the number of time
 
 ## How to Use:
 
-Simply click the link above and you're good to go!
+Simply click the link above and you're good to go! 
 
-Note: If you have any questions, or if the website isn't working, feel free to reach out and e-mail me! I believe the site might shut down after a certain amount of inactivity, so I'd be happy to restart it for anyone interested!
+After clicking play on the Home Screen, the game will provide 'Would You Rather' questions for you to answer. Simply click the question that suits your preference! Or if you'd like, try to guess where the majority opinion resides! The score at the top-left tells you exactly that: how many times your choice aligned with the prevailing opinion (for newly generated questions, or questions without any previous response data, they will not contribute to your score or total question count).
+
+Note: If you have any questions, or if the website isn't working, feel free to reach out and e-mail me! I believe the database might shut down after a certain amount of inactivity, so I'd be happy to restart it for anyone interested!
 
 ## Screenshots:
 
