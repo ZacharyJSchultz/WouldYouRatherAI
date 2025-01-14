@@ -226,7 +226,7 @@ function WouldYouRather() {
           </p>
           <p className="score-text score-disclaimer">(not counting newly generated questions)</p>
           <h1 className="game-text game-title-text">Would You Rather</h1>
-          <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/~zachary/" style={{textDecoration: "underline"}} target="_blank">Zach Schultz</a></p>
+          <p className="game-text game-author-text">Developed by <a href="https://www.linkedin.com/in/zacharyjschultz/" style={{textDecoration: "underline"}} target="_blank">Zach Schultz</a></p>
           <a href="https://github.com/ZacharyJSchultz/WouldYouRatherAI" className="game-text game-source-text" target="_blank">GitHub</a>
         </>
       }
