@@ -1,5 +1,7 @@
 # WouldYouRatherAI
 
+## Note: this project is currently offline! Feel free to view the website page, but the database and backend are not currently hosted.
+
 ![Home Screen Screenshot](/screenshots/home_screen.png?raw=true)
 
 A would-you-rather game that uses Generative AI to generate questions, and stores responses in a PostgreSQL database.
